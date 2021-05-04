@@ -1,5 +1,10 @@
 require 'yaml'
 
+Dir.mkdir('saves') unless Dir.exist?('saves')
+saves = Dir.entries('saves')
+saves.delete('.')
+saves.delete('..')
+
 dictionary = File.open('5desk.txt', 'r')
 words = []
 
@@ -17,12 +22,13 @@ end
 class HangmanGame
   attr_reader :game_over, :turns, :letter_array
 
-  def initialize(word, turns)
+  def initialize(word, turns, game_over = false, game_array = nil, used_letters = [])
     @letter_array = word.split('')
-    @game_over = false
+    @game_over = game_over
     @turns = turns
     @game_array = make_game_array
-    @used_letters = []
+    @game_array = game_array unless game_array.nil?
+    @used_letters = used_letters
     puts '--- Game Initialized ! ---'
   end
 
@@ -30,7 +36,38 @@ class HangmanGame
     puts "#{@turns} turns left"
     puts "You already used the letters: #{@used_letters.join(' , ')}"
     puts @game_array.join('')
-    check_input
+    game_input
+    if @input == 'save'
+      save_menu
+    else
+      game_choice
+    end
+  end
+
+  private
+
+  def save_menu
+    print "1. Save game \n2. Load game \nWhat do you want to do?(1/2 - other choice will leave menu) "
+    case gets.chomp.to_i
+    when 1
+      save_game
+    when 2
+      load_game
+    else
+      puts "\nLeft the save menu!"
+      round
+    end
+  end
+
+  def save_game
+
+  end
+
+  def load_game
+
+  end
+
+  def game_choice
     @used_letters.push @input
     update_game_array
     end_game
@@ -40,8 +77,6 @@ class HangmanGame
       puts @turns.positive? ? '--- You Won! ---' : '--- You Lost ---'
     end
   end
-
-  private
 
   def update_game_array
     if @letter_array.include?(@input)
@@ -55,11 +90,14 @@ class HangmanGame
     end
   end
 
-  def check_input
+  def game_input
     @input = ''
     until ('a'..'z').include?(@input) && !@used_letters.include?(@input)
-      puts 'Give a letter that you haven`t already used: '
-      @input = gets.chomp.downcase[0]
+      puts 'Give a letter that you haven`t already used (write "save" for save options): '
+      @input = gets.chomp.downcase
+      break if @input == 'save'
+
+      @input = @input[0]
     end
   end
 
