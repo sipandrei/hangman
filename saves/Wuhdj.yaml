@@ -1,0 +1,24 @@
+--- !ruby/object:HangmanGame
+letter_array:
+- u
+- p
+- d
+- r
+- a
+- f
+- t
+game_over: false
+turns: 5
+game_array:
+- _
+- _
+- d
+- _
+- a
+- _
+- _
+used_letters:
+- a
+- d
+- q
+input: save

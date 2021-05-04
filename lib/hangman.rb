@@ -1,9 +1,6 @@
 require 'yaml'
 
 Dir.mkdir('saves') unless Dir.exist?('saves')
-saves = Dir.entries('saves')
-saves.delete('.')
-saves.delete('..')
 
 dictionary = File.open('5desk.txt', 'r')
 words = []
@@ -18,23 +15,25 @@ def clean_dictionary(target_array, source_file)
   end
 end
 
+clean_dictionary(words, dictionary)
+dictionary.close
+
 # Game Class
 class HangmanGame
-  attr_reader :game_over, :turns, :letter_array
+  attr_reader :game_over
 
-  def initialize(word, turns, game_over = false, game_array = nil, used_letters = [])
+  def initialize(word, turns)
     @letter_array = word.split('')
-    @game_over = game_over
+    @game_over = false
     @turns = turns
     @game_array = make_game_array
-    @game_array = game_array unless game_array.nil?
-    @used_letters = used_letters
+    @used_letters = []
     puts '--- Game Initialized ! ---'
   end
 
   def round
     puts "#{@turns} turns left"
-    puts "You already used the letters: #{@used_letters.join(' , ')}"
+    puts "You already used the letters: #{@used_letters.join(' , ')}" unless @used_letters.empty?
     puts @game_array.join('')
     game_input
     if @input == 'save'
@@ -43,6 +42,10 @@ class HangmanGame
       game_choice
     end
   end
+
+  protected
+
+  attr_reader :letter_array, :turns, :game_array, :used_letters
 
   private
 
@@ -60,11 +63,36 @@ class HangmanGame
   end
 
   def save_game
-
+    save_name = (0...5).map { (65 + rand(26)).chr }.join.capitalize
+    File.open("saves/#{save_name}.yaml", 'w') do |file|
+      file.puts YAML.dump(self)
+    end
+    puts "\n --- Game Saved - #{save_name}.yaml ---"
   end
 
   def load_game
+    save_array = retrieve_saves
+    save_array.each_with_index { |filename, index| puts "#{index + 1}. #{filename}" }
+    print 'Enter the number of the save that you want to load: '
+    save_number = gets.chomp.to_i
+    loaded_save = YAML.load(File.read("saves/#{save_array[save_number - 1]}"))
+    copy_hangman(loaded_save)
+    puts "\n--- Game Loaded - #{save_array[save_number - 1]} ---"
+  end
 
+  def copy_hangman(source)
+    @game_array = source.game_array
+    @game_over = source.game_over
+    @letter_array = source.letter_array
+    @turns = source.turns
+    @used_letters = source.used_letters
+  end
+
+  def retrieve_saves
+    saves = Dir.entries('saves')
+    saves.delete('.')
+    saves.delete('..')
+    saves
   end
 
   def game_choice
@@ -74,7 +102,7 @@ class HangmanGame
     if @game_over == false
       sleep(1)
     else
-      puts @turns.positive? ? '--- You Won! ---' : '--- You Lost ---'
+      puts @turns.positive? ? '--- You Won! ---' : "--- You Lost ---\nThe word was \"#{game.letter_array.join('')}\""
     end
   end
 
@@ -118,14 +146,9 @@ class HangmanGame
   end
 end
 
-clean_dictionary(words, dictionary)
-dictionary.close
-
 game = HangmanGame.new(words.sample, 6)
 
 until game.game_over
   game.round
   puts ''
 end
-
-puts "The word was \"#{game.letter_array.join('')}\""
